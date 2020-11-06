@@ -28,6 +28,10 @@
 #define BOHR_TO_ANGSTROM	0.529177
 #define ANGSTROM_TO_BOHR	1.889727
 
+// Angle conversion
+#define RADIAN_TO_DEGREE	57.295779513
+#define DEGREE_TO_RADIAN	0.01745329252
+
 // Mass conversion
 
 #define DAL_TO_KG		1.66054E-27

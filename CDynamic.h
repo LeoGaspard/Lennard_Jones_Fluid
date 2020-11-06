@@ -9,8 +9,10 @@
 //AUTHOR:		Léo Gaspard
 ///////////////////////////////////////////////////////
 
+#include <boost/format.hpp>
 
 #include "CApplication.h"
+#include "CBox.h"
 
 class CDynamic : public CApplication
 {
@@ -19,11 +21,15 @@ class CDynamic : public CApplication
 				~CDynamic();
 		void		Setup(int, const char **);
 
+
+		// Output methods
+		void		OutHeader();
+
 	protected:
 		void		ParseInputFile();
 
 	private:
 		int		m_iNStep;
 		double		m_dTimeStep;
-//		Box		m_Box
+		CBox		m_Box;
 };

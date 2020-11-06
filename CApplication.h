@@ -32,6 +32,7 @@ class CApplication
 		void			ParseInputFile();
 
 	protected :
+		std::ofstream		m_streamOutput;
 		unsigned int		m_iNumberThreads;
 		std::string		m_strInputFile, m_strOutputFile;
 
