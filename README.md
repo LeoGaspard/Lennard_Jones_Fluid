@@ -26,7 +26,7 @@ Some of the input options are blocks, each block will end with the **End** keywo
 
 It is not mandatory to provide the informations of the input file in the default units. It is possible to specify the unit by adding a keyword after the value.
 |Unit| Angstrom  | K|Hartree | Joules | cm$^{-1}$ | kcal/mol | kJ/mol
-|--|--|--|--|--|--|--|--|--|--|--|--|
+|--|--|--|--|--|--|--|--
 |**Keyword**  | A | K | H | J | cm |kcalmol| kjmol 
 
 
