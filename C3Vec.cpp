@@ -38,6 +38,12 @@ double	C3Vec::Norm()
 	return sqrt(m_dX*m_dX+m_dY*m_dY+m_dZ*m_dZ);
 } //Norm
 
+// Returns the square of the norm of the vector
+double	C3Vec::Norm2()
+{
+	return m_dX*m_dX+m_dY*m_dY+m_dZ*m_dZ;
+} //Norm2
+
 // Returns the dot product between this and v
 double	C3Vec::Dot(C3Vec v)
 {
@@ -101,6 +107,46 @@ void	C3Vec::operator-=(const C3Vec& v)
 	this->m_dY -= v.m_dY;
 	this->m_dZ -= v.m_dZ;
 }//operator-=
+
+// Overloads the * operator between a C3Vec and a scalar
+C3Vec	C3Vec::operator*(const double& d)
+{
+	double x,y,z;
+
+	x = this->m_dX*d;
+	y = this->m_dY*d;
+	z = this->m_dZ*d;
+
+	return C3Vec(x,y,z);
+}//operator*
+
+// Overloads the *= between a C3Vec and a scalar
+void	C3Vec::operator*=(const double& d)
+{
+	this->m_dX *= d;
+	this->m_dY *= d;
+	this->m_dZ *= d;
+}//operator*=
+
+// Overloads the / operator between a C3Vec and a scalar
+C3Vec	C3Vec::operator/(const double& d)
+{
+	double x,y,z;
+
+	x = this->m_dX/d;
+	y = this->m_dY/d;
+	z = this->m_dZ/d;
+
+	return C3Vec(x,y,z);
+}//operator*
+
+// Overloads the /= between a C3Vec and a scalar
+void	C3Vec::operator/=(const double& d)
+{
+	this->m_dX /= d;
+	this->m_dY /= d;
+	this->m_dZ /= d;
+}//operator*=
 
 // Overloads the printing operator for a C3Vec
 std::ostream&	operator<<(std::ostream& os, const C3Vec& v)

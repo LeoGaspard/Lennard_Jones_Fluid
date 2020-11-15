@@ -22,11 +22,14 @@
 #define BOHR_RADIUS 		5.2917721056E-11 	// m
 #define HARTREE_ENERGY 		4.359744651E-18 	// J
 #define ELECTRON_MASS		9.1093837015E-31	// kg
+#define KB			1.380649E-23		// J.K^{-1}
 
 // Length conversion
 
 #define BOHR_TO_ANGSTROM	0.529177
 #define ANGSTROM_TO_BOHR	1.889727
+#define ANGSTROM_TO_M		10E-10
+#define M_TO_ANGSTROM		10E+10
 
 // Angle conversion
 #define RADIAN_TO_DEGREE	57.295779513
@@ -69,5 +72,17 @@
 #define KCALMOL_TO_CM 		349.755
 #define KJMOL_TO_KCALMOL 	0.239006
 #define KCALMOL_TO_KJMOL 	4.18400
+#define K_TO_J			1.3806E-23
+#define J_TO_K			7.2430E+22
+#define HARTREE_TO_K		3.15777E+05
+#define K_TO_HARTREE            3.16678E-06
+#define K_TO_EV			8.61705E-05
+#define EV_TO_K			1.16049E+04
+#define K_TO_CM			6.95028E-01
+#define CM_TO_K			1.42879
+#define K_TO_KCALMOL		1.98717E-03
+#define KCALMOL_TO_K		5.03228E+02
+#define K_TO_KJMOL		8.31435E-03
+#define KJMOL_TO_K		1.20274E+02
 
 #endif //CONSTANTS_H_INCLUDED

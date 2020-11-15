@@ -15,21 +15,23 @@
 #include "CPos.h"
 #include "CSpeed.h"
 #include "CForce.h"
+#include "Constants.h"
 
 class CAtom
 {
 	private:
-		double		m_dSigma, m_dEpsilon;
+		double		m_dSigma, m_dEpsilon,m_dMass,m_dKineticEnergy;
 		CPos		m_Position;
 		CSpeed		m_Speed;
 		CForce		m_Forces;
 
 	public:
-				CAtom(double inSigma=0.0, double inZ=0.0);
-				CAtom(double inSigma, double inZ,CPos inP);
-				CAtom(double inSigma, double inZ,CPos inP, CSpeed inS);
-				CAtom(double inSigma, double inZ,CPos inP, CSpeed inS, CForce inF);
+				CAtom(double inMass,double inSigma=0.0, double inZ=0.0);
+				CAtom(double inMass,double inSigma, double inZ,CPos inP);
+				CAtom(double inMass,double inSigma, double inZ,CPos inP, CSpeed inS);
+				CAtom(double inMass,double inSigma, double inZ,CPos inP, CSpeed inS, CForce inF);
 				~CAtom();
+		void		ComputeKineticEnergy();
 
 		// Getters
 		CPos		GetPos(){return m_Position;};
@@ -37,20 +39,17 @@ class CAtom
 		CForce		GetForces(){return m_Forces;};
 		double		GetSigma(){return m_dSigma;};
 		double		GetEpsilon(){return m_dEpsilon;};
+		double		GetKineticEnergy(){return m_dKineticEnergy;};
+		double		GetMass(){return m_dMass;};
 
 		// Setters
 		void		SetPos(CPos p){m_Position = p;};
 		void		SetSpeed(CSpeed s){m_Speed = s;};
 		void		SetForces(CForce f){m_Forces = f;};
 		void		Move(CPos p){m_Position += p;};
+		void		AddForce(CForce f){m_Forces += f;};
 		void		ChangeSpeed(CSpeed s){m_Speed += s;};
-
-
-		// Output methods
-//		void		OutPos(std::ofstream& f);
-//		void		OutSpeed(std::ofstream& f);
-//		void		OutForce(std::ofstream& f);
-	
+		void		SetMass(double m){m_dMass = m;};
 };
 
 #endif // CATOM_H_INCLUDED

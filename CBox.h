@@ -20,9 +20,11 @@
 #include <vector>
 #include <math.h>
 #include <random>
+#include <omp.h>
 
 #include "Constants.h"
 #include "CAtom.h"
+#include "C3Mat.h"
 #include "C3Vec.h"
 #include "CPos.h"
 #include "CSpeed.h"
@@ -32,9 +34,11 @@
 class CBox
 {
 	private:
-		double 			m_dA, m_dB, m_dC, m_dAlpha, m_dBeta, m_dGamma, m_dVolume;
-		std::vector<CAtom>	m_vAtomList;
-		C3Vec			m_AVec, m_BVec, m_CVec, m_UVec, m_VVec, m_WVec;
+		double 					m_dA, m_dB, m_dC, m_dAlpha, m_dBeta, m_dGamma, m_dVolume;
+		std::vector<CAtom>			m_vAtomList;
+		C3Mat					m_H;
+		std::vector<std::vector<unsigned int>>	m_vNeighborList;
+		std::vector<CPos>			m_vPosList;
 
 	public:
 		// Constructors & destructor
@@ -42,9 +46,28 @@ class CBox
 					~CBox();
 
 		// Methods
+		void			Setup();
+		void			AddAtoms(unsigned int inNumber, double inSigma, double inEpsilon,double inMass);
 		void			Wrap();
-		void			InitPosFromRandomDistribution(unsigned int inNPoints, double inDMin);
+		void			InitPosFromRandomDistribution(double inDMin);
+		void			InitSpeedRandom(double inTemperature);
+		double			ComputeTemperature();
+		void			ComputeForces();
+		void			NeighborList(double cutoff, double neighbor);
+		bool			CheckNeighborList(double neighbor);
+
+		// Getters
 		CAtom&			GetAtom(unsigned int n);
+		double			GetTemperature(){return this->ComputeTemperature();};
+		unsigned int		GetNAtom(){return m_vAtomList.size();};
+
+		// Setters
+		void			SetA(double inA){m_dA = inA;};
+		void			SetB(double inB){m_dB = inB;};
+		void			SetC(double inC){m_dC = inC;};
+		void			SetAlpha(double inAlpha){m_dAlpha = inAlpha;};
+		void			SetBeta(double inBeta){m_dBeta = inBeta;};
+		void			SetGamma(double inGamma){m_dGamma = inGamma;};
 
 		// Output methods
 		void			OutBoxParam(std::ofstream& f);

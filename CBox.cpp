@@ -20,59 +20,6 @@ CBox::CBox(double inA, double inB, double inC, double inAlpha, double inBeta, do
 	m_dAlpha = inAlpha;
 	m_dBeta = inBeta;
 	m_dGamma = inGamma;
-
-	double ca = cos(inAlpha*DEGREE_TO_RADIAN);
-	double cb = cos(inBeta*DEGREE_TO_RADIAN);
-	double cc = cos(inGamma*DEGREE_TO_RADIAN);
-	double sc = sin(inGamma*DEGREE_TO_RADIAN);
-
-	m_dVolume = inA*inB*inC*sqrt(1-ca*ca-cb*cb-cc*cc+2*ca*cb*cc);
-
-	//Building the unit cell vectors in the cartesian basis
-	
-	// a = [a,0,0]
-	double x = inA;
-	double y = 0.0;
-	double z = 0.0;
-
-	m_AVec = C3Vec(x,y,z);
-
-	// b = [b*cos(gamma),b*sin(gamma),0]
-	x = inB*cc;
-	y = inB*sc;
-	z = 0.0;
-
-	m_BVec = C3Vec(x,y,z);
-
-	// c = [c*cos(beta),c*(cos(alpha)-cos(beta)*cos(gamma))/sin(gamma),volume/(a*b*sin(gamma))]
-	x = inC*cb;
-	y = inC*(ca-cb*cc)/sc;
-	z = m_dVolume/(inA*inB*sc);
-
-	m_CVec = C3Vec(x,y,z);
-
-	//Building the unit cell vectors in the fractionnal basis
-	
-	// u = [1/a,0,0]
-	x = 1/inA;
-	y = 0.0;
-	z = 0.0;
-
-	m_UVec = C3Vec(x,y,z);
-	
-	// v = [-cos(gamma)/(a*sin(gamma)),1/(b*sin(gamma)),0]
-	x = -cc/(inA*sc);
-	y = 1/(inB*sc);
-	z = 0.0;
-
-	m_VVec = C3Vec(x,y,z);
-	
-	// w = [b*c*(cos(alpha)*cos(gamma)-cos(beta))/(volume*sin(gamma)),a*c*(cos(beta)*cos(gamma)-cos(alpha))/(volume*sin(gamma)),a*b*sin(gamma)/volume]
-	x = inB*inC*(ca*cc-cb)/(m_dVolume*sc);
-	y = inA*inC*(cb*cc-ca)/(m_dVolume*sc);
-	z = inA*inB*sc/m_dVolume;
-
-	m_WVec = C3Vec(x,y,z);
 }//CBox
 
 //Destructor
@@ -81,12 +28,35 @@ CBox::~CBox()
 
 }//~CBox
 
+// Computes the volume and vectors of the box
+void	CBox::Setup()
+{
+	double ca = cos(m_dAlpha*DEGREE_TO_RADIAN);
+	double cb = cos(m_dBeta*DEGREE_TO_RADIAN);
+	double cc = cos(m_dGamma*DEGREE_TO_RADIAN);
+	double sc = sin(m_dGamma*DEGREE_TO_RADIAN);
+
+	//Building the unit cell vectors in the cartesian basis
+	m_H(0,0) = m_dA;
+	m_H(1,0) = 0.0;
+	m_H(2,0) = 0.0;
+	m_H(0,1) = m_dB*cc;
+	m_H(1,1) = m_dB*sc;
+	m_H(2,1) = 0.0;
+	m_H(0,2) = m_dC*cb;
+	m_H(1,2) = m_dC*(ca-cb*cc)/sc;
+	m_H(2,2) = m_dC*sqrt(1-cb*cb-(ca-cb*cc)*(ca-cb*cc)/(sc*sc));
+
+	m_dVolume = m_H.Determinant();
+}//Setup
+
 // Generates random positions separated by inDMin inside the cell
 // The cell is placed inside of a grid of cubes of great diagonal = inDMin such
 // that each cube can contain one and only one point.
 // For each trial position, only the surrounding cubes are tested
-void	CBox::InitPosFromRandomDistribution(unsigned int inNPoints, double inDMin)
+void	CBox::InitPosFromRandomDistribution(double inDMin)
 {
+	unsigned int					iNPoints(m_vAtomList.size());
 	double 						r2 = inDMin*inDMin;
 	double 						dCellSize = inDMin/sqrt(3); // The great diagonal of a cube of sides a is a*sqrt(3)
 	std::vector<std::vector<std::vector<int>>>	vGrid;
@@ -102,9 +72,10 @@ void	CBox::InitPosFromRandomDistribution(unsigned int inNPoints, double inDMin)
 		{
 			for(unsigned int k=0;k<2;k++)
 			{
-				double x = i*m_AVec.GetX() + j*m_BVec.GetX() + k*m_CVec.GetX();
-				double y = i*m_AVec.GetY() + j*m_BVec.GetY() + k*m_CVec.GetY();
-				double z = i*m_AVec.GetZ() + j*m_BVec.GetZ() + k*m_CVec.GetZ();
+				double x = i*m_H(0,0) + j*m_H(0,1) + k*m_H(0,2);
+				double y = i*m_H(1,0) + j*m_H(1,1) + k*m_H(1,2);
+				double z = i*m_H(2,0) + j*m_H(2,1) + k*m_H(2,2);
+
 
 				dXMin = (x < dXMin) ? x : dXMin; 
 				dXMax = (x > dXMax) ? x : dXMax; 
@@ -141,27 +112,20 @@ void	CBox::InitPosFromRandomDistribution(unsigned int inNPoints, double inDMin)
 	std::default_random_engine		eng(rd());
 	std::uniform_real_distribution<double>	seed(0,1);
 	unsigned int				iNAccepted(0);
-	while(iNAccepted < inNPoints)
+	while(iNAccepted < iNPoints)
 	{
 		bool	bAccepted = true;
 
 		// Generate the trial fractional coordinates
-		double	dTrialU = seed(eng);
-		double	dTrialV = seed(eng);
-		double	dTrialW = seed(eng);
+		CPos	p1(seed(eng),seed(eng),seed(eng));
 
 		// Express the trial coordinates in the cartesian basis
-		double dTrialX = dTrialU*m_AVec.GetX() + dTrialV*m_BVec.GetX() + dTrialW*m_CVec.GetX();
-		double dTrialY = dTrialU*m_AVec.GetY() + dTrialV*m_BVec.GetY() + dTrialW*m_CVec.GetY();
-		double dTrialZ = dTrialU*m_AVec.GetZ() + dTrialV*m_BVec.GetZ() + dTrialW*m_CVec.GetZ();
-
-
-		CPos	p1(dTrialX,dTrialY,dTrialZ);
+		p1 = m_H*p1;
 
 		// Find the grid position of this point
-		int iGridX = static_cast<int>(floor(dTrialX/dCellSize));
-		int iGridY = static_cast<int>(floor(dTrialY/dCellSize));
-		int iGridZ = static_cast<int>(floor(dTrialZ/dCellSize));
+		int iGridX = static_cast<int>(floor(p1.GetX()/dCellSize));
+		int iGridY = static_cast<int>(floor(p1.GetY()/dCellSize));
+		int iGridZ = static_cast<int>(floor(p1.GetZ()/dCellSize));
 
 		// Applying PBC
 		iGridX = (iGridX < 0) ? iGridX+iNDivX : iGridX;
@@ -214,8 +178,9 @@ CAtom&	CBox::GetAtom(unsigned int n)
 	}
 	else
 	{
-		std::cerr << "Fatal Error : Requested access to atom n°" << n+1 << " where there are only " << m_vAtomList.size() << std::endl;
-		exit(1);
+		std::stringstream errMsg;
+		errMsg << "Requested access to atom n°" << n+1 << " where there are only " << m_vAtomList.size();
+		throw std::length_error(errMsg.str());
 	}
 }//GetAtom
 
@@ -228,15 +193,13 @@ void	CBox::Wrap()
 	{
 		CPos p = m_vAtomList[i].GetPos();
 
-		double x = p.GetX();
-		double y = p.GetY();
-		double z = p.GetZ();
+		p = m_H.Inverse()*p;
 
-		// Transform x, y and z into fractional coordinates
+		double u = p.GetX();
+		double v = p.GetY();
+		double w = p.GetZ();
 
-		double u = x*m_UVec.GetX() + y*m_VVec.GetX() + z*m_WVec.GetX();
-		double v = x*m_UVec.GetY() + y*m_VVec.GetY() + z*m_WVec.GetY();
-		double w = x*m_UVec.GetZ() + y*m_VVec.GetZ() + z*m_WVec.GetZ();
+		p = m_H.Inverse()*p;
 
 		// Apply PBC
 
@@ -244,15 +207,211 @@ void	CBox::Wrap()
 		v = (v<0 || v>1) ? v-floor(v) : v;
 		w = (w<0 || w>1) ? w-floor(w) : w;
 
+		p.SetX(u);
+		p.SetY(v);
+		p.SetZ(w);
+
 		// Converting back to cartesian coordinates
+		p= m_H*p;
 
-		x = u*m_AVec.GetX() + v*m_BVec.GetX() + w*m_CVec.GetX();
-		y = u*m_AVec.GetY() + v*m_BVec.GetY() + w*m_CVec.GetY();
-		z = u*m_AVec.GetZ() + v*m_BVec.GetZ() + w*m_CVec.GetZ();
-
-		m_vAtomList[i].SetPos(CPos(x,y,z));
+		m_vAtomList[i].SetPos(p);
 	}
 }//Wrap
+
+void	CBox::AddAtoms(unsigned int inNumber, double inSigma, double inEpsilon,double inMass)
+{
+	for(unsigned int i=0; i<inNumber; i++)
+	{
+		m_vAtomList.push_back(CAtom(inMass,inSigma,inEpsilon));
+	}
+}
+
+// Initialise the speeds with random values
+void	CBox::InitSpeedRandom(double inTemperature)
+{
+	std::random_device			rd;
+	std::default_random_engine		eng(rd());
+	std::uniform_real_distribution<double>	seed(0,1);
+
+	for(unsigned int i=0; i<m_vAtomList.size(); i++)
+	{
+		double dX = seed(eng);
+		double dY = seed(eng);
+		double dZ = seed(eng);
+
+		CSpeed s(dX,dY,dZ);
+
+		// scaling the speed using <V>²=3Kb<T>/m
+		double dScaling = (s.Norm()*BOHR_TO_ANGSTROM*ANGSTROM_TO_M)/sqrt(3*KB*inTemperature/(m_vAtomList[i].GetMass()*DAL_TO_KG));
+		s /= dScaling;
+		m_vAtomList[i].SetSpeed(s);
+	}
+}//InitSpeedRandom
+
+double	CBox::ComputeTemperature()
+{
+	double dT(0.0);
+
+	for(unsigned int i=0; i<m_vAtomList.size();i++)
+	{
+		m_vAtomList[i].ComputeKineticEnergy();
+		
+		dT += 2*m_vAtomList[i].GetKineticEnergy()/(3*KB);
+	}
+
+	dT /= m_vAtomList.size();
+
+	return dT;
+}//ComputeTemperature
+
+void	CBox::ComputeForces()
+{
+	double dPotential(0.0);
+
+	#pragma omp parallel for reduction(+:dPotential)
+	for(unsigned int i=0;i<(m_vAtomList.size()-1);i++)
+	{
+		for(unsigned int k=0;k<m_vNeighborList[i].size();k++)
+		{
+			unsigned int j = m_vNeighborList[i][k];
+			C3Vec ri = m_vAtomList[i].GetPos();
+			C3Vec rj = m_vAtomList[j].GetPos();
+
+			// Algorithm for the minimum image convention in
+			// Appendix B, Eq. B.9. 
+			// M. E. Tuckerman. Statistical Mechanics : Theory and Molecular Simulation
+			// Oxford University Press, Oxford, UK, 2010
+			ri = m_H.Inverse()*ri;
+			rj = m_H.Inverse()*rj;
+
+			C3Vec rij = ri-rj;
+
+			rij.SetX(rij.GetX()-round(rij.GetX()));
+			rij.SetX(rij.GetY()-round(rij.GetY()));
+			rij.SetX(rij.GetZ()-round(rij.GetZ()));
+
+			rij = m_H*rij;
+
+			// End of the algorithm
+
+			double r2 = rij.Norm2();
+			double sigma(0.0), epsilon(0.0);
+
+			if(m_vAtomList[i].GetSigma() == m_vAtomList[j].GetSigma())
+			{
+				sigma = m_vAtomList[i].GetSigma();
+			}
+			else
+			{
+				sigma = (m_vAtomList[i].GetSigma()+m_vAtomList[j].GetSigma())/2.0;
+			}
+			if(m_vAtomList[i].GetEpsilon() == m_vAtomList[j].GetEpsilon())
+			{
+				epsilon = m_vAtomList[i].GetEpsilon();
+			}
+			else
+			{
+				epsilon = sqrt(m_vAtomList[i].GetEpsilon()*m_vAtomList[j].GetEpsilon());
+			}
+
+			double r6 = r2*r2*r2;
+			double s6 = sigma*sigma*sigma*sigma*sigma*sigma;
+
+			// V = 4E[s^12/r^12-s^6/r^6]
+			dPotential += 4*epsilon*((s6*s6)/(r6*r6)-s6/r6);
+
+			CForce f;
+
+			// dV/dx1 = (x1-x2)*E*[24*s^6/r^8-48*s^12/r^14]
+			f.SetX((ri.GetX()-rj.GetX())*epsilon*(24*s6/(r6*r2)-46*s6*s6/(r6*r6*r2)));
+			f.SetY((ri.GetY()-rj.GetY())*epsilon*(24*s6/(r6*r2)-46*s6*s6/(r6*r6*r2)));
+			f.SetZ((ri.GetZ()-rj.GetZ())*epsilon*(24*s6/(r6*r2)-46*s6*s6/(r6*r6*r2)));
+
+			#pragma omp critical
+			m_vAtomList[i].AddForce(f);
+
+			f = CForce() - f;
+
+			#pragma omp critical
+			m_vAtomList[j].AddForce(f);
+		}
+	}
+}
+
+// Builds the neighbor list in the box
+void	CBox::NeighborList(double cutoff, double neighbor)
+{
+	m_vNeighborList.clear();
+	m_vPosList.clear();
+
+	m_vNeighborList.resize(m_vAtomList.size());
+
+	double 	r2 = (cutoff+neighbor)*(cutoff+neighbor);
+	#pragma omp parallel for schedule(guided)
+	for(unsigned int i=0; i<m_vAtomList.size()-1; i++)
+	{
+		for(unsigned int j=i+1; j<m_vAtomList.size();j++)
+		{
+			CPos ri = m_vAtomList[i].GetPos();
+			CPos rj = m_vAtomList[j].GetPos();
+
+			// Algorithm for the minimum image convention in
+			// Appendix B, Eq. B.9. 
+			// M. E. Tuckerman. Statistical Mechanics : Theory and Molecular Simulation
+			// Oxford University Press, Oxford, UK, 2010
+			ri = m_H.Inverse()*ri;
+			rj = m_H.Inverse()*rj;
+
+			C3Vec rij = ri-rj;
+
+			rij.SetX(rij.GetX()-round(rij.GetX()));
+			rij.SetX(rij.GetY()-round(rij.GetY()));
+			rij.SetX(rij.GetZ()-round(rij.GetZ()));
+
+			rij = m_H*rij;
+
+			// End of the algorithm
+			
+			double	d2 = rij.Norm2();
+
+
+			if(d2<r2)
+			{
+				#pragma omp critical
+				{
+					m_vNeighborList[i].push_back(j);
+				}
+			}
+		}
+	}
+	for(unsigned int i=0;i<m_vAtomList.size();i++)
+	{
+		m_vPosList.push_back(m_vAtomList[i].GetPos());
+	}
+}//NeighborList
+
+//Check if the maximum displacement from the m_vPosList is 
+//greater than neighbor/2, return true if it is
+bool	CBox::CheckNeighborList(double neighbor)
+{
+	bool check = true;
+	#pragma omp parallel for
+	for(unsigned int i=0;i<m_vAtomList.size();i++)
+	{
+		CPos ri = m_vAtomList[i].GetPos();
+		CPos rj = m_vPosList[i];
+
+		C3Vec rij = ri - rj;
+
+		if(rij.Norm2() > neighbor/2)
+		{
+			std::cout << rij.Norm2() << std::endl;
+			check = false;
+		}
+	}
+	return check;
+}
+
 
 // Write the box parameters in the stream f
 void	CBox::OutBoxParam(std::ofstream& f)
@@ -271,9 +430,7 @@ void	CBox::OutBoxParam(std::ofstream& f)
 	// Box vectors
 	f << std::string(150,'-') << std::endl;
 	f << boost::format("%-150s")%"a b and c vectors in the cartesian basis :" << std::endl << std::endl;
-	f << m_AVec << std::endl;
-	f << m_BVec << std::endl;
-	f << m_CVec << std::endl;
+	f << std::endl << m_H << std::endl;
 } // OutBoxParam
 
 // Write the atomic coordinates in the stream f
@@ -302,3 +459,5 @@ void	CBox::OutAtomForces(std::ofstream& f)
 		f << m_vAtomList[i].GetForces() << std::endl;
 	}
 }//OutAtomForces
+
+

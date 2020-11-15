@@ -12,10 +12,11 @@
 #include "CAtom.h"
 
 //Constructor
-CAtom::CAtom(double inSigma, double inE)
+CAtom::CAtom(double inMass,double inSigma, double inE)
 {
 	m_dSigma = inSigma;
 	m_dEpsilon = inE;
+	m_dMass = inMass;
 
 	CPos p;
 	CSpeed s;
@@ -28,9 +29,10 @@ CAtom::CAtom(double inSigma, double inE)
 }//CAtom
 
 //Constructor
-CAtom::CAtom(double inSigma, double inE, CPos inP)
+CAtom::CAtom(double inMass,double inSigma, double inE, CPos inP)
 {
 	m_dSigma = inSigma;
+	m_dMass = inMass;
 	m_dEpsilon = inE;
 	m_Position = inP;
 
@@ -42,9 +44,10 @@ CAtom::CAtom(double inSigma, double inE, CPos inP)
 }//CAtom
 
 //Constructor
-CAtom::CAtom(double inSigma, double inE, CPos inP, CSpeed inS)
+CAtom::CAtom(double inMass,double inSigma, double inE, CPos inP, CSpeed inS)
 {
 	m_dSigma = inSigma;
+	m_dMass = inMass;
 	m_dEpsilon = inE;
 	m_Position = inP;
 	m_Speed = inS;
@@ -55,9 +58,10 @@ CAtom::CAtom(double inSigma, double inE, CPos inP, CSpeed inS)
 }//CAtom
 
 //Constructor
-CAtom::CAtom(double inSigma, double inE, CPos inP, CSpeed inS, CForce inF)
+CAtom::CAtom(double inMass,double inSigma, double inE, CPos inP, CSpeed inS, CForce inF)
 {
 	m_dSigma = inSigma;
+	m_dMass = inMass;
 	m_dEpsilon = inE;
 	m_Position = inP;
 	m_Speed = inS;
@@ -70,22 +74,11 @@ CAtom::~CAtom()
 
 }//~CAtom
 
-//// Prints the position vector in the stream f
-//void	CAtom::OutPos(std::ofstream& f)
-//{
-//	f << m_Position << std::endl;
-//} // OutPos
-//
-//// Prints the speed vector in the stream f
-//void	CAtom::OutSpeed(std::ofstream& f)
-//{
-//	f << m_Speed << std::endl;
-//} // OutSpeed
-//
-//// Prints the force vector in the stream f
-//void	CAtom::OutForce(std::ofstream& f)
-//{
-//	f << m_Forces << std::endl;
-//} // OutSpeed
+//Computes the kinetic energy E = 1/2 mv^2
+void	CAtom::ComputeKineticEnergy()
+{
+	m_dKineticEnergy = 0.5*m_dMass*m_Speed.Norm2();
 
-
+	// Converting the energy from dal.bohr^2.s^-2 to J
+	m_dKineticEnergy *= DAL_TO_KG*BOHR_TO_ANGSTROM*ANGSTROM_TO_M*BOHR_TO_ANGSTROM*ANGSTROM_TO_M;
+}//ComputeKineticEnergy

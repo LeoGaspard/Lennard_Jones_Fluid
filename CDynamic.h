@@ -17,9 +17,15 @@
 class CDynamic : public CApplication
 {
 	public:
+		// Methods
 				CDynamic();
 				~CDynamic();
 		void		Setup(int, const char **);
+		
+
+
+			// Thermostats
+		void		Berendsen();
 
 
 		// Output methods
@@ -29,7 +35,12 @@ class CDynamic : public CApplication
 		void		ParseInputFile();
 
 	private:
-		int		m_iNStep;
-		double		m_dTimeStep;
 		CBox		m_Box;
+
+		//MD attributes
+		double		m_dTimeStep, m_dInitTemperature, m_dNeighbor, m_dCutoff;
+		int		m_iNStep;
+
+		//Thermostats attributes
+		double		m_dBerendsenTau;
 };

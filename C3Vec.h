@@ -17,8 +17,11 @@
 #include <math.h>
 
 
+class C3Mat;
+
 class C3Vec
 {
+	friend class C3Mat;
 	protected:
 		double		m_dX,m_dY,m_dZ;
 	public:
@@ -26,6 +29,7 @@ class C3Vec
 				C3Vec();
 				~C3Vec();
 		double		Norm();
+		double		Norm2();
 		double		Dot(C3Vec v);
 		C3Vec		Cross(C3Vec v);
 		std::ostream&	Print(std::ostream& out) const;
@@ -45,8 +49,13 @@ class C3Vec
 		void		operator+=(const C3Vec& v);
 		C3Vec 		operator-(const C3Vec& v);
 		void		operator-=(const C3Vec& v);
+		C3Vec		operator*(const double& d);
+		void		operator*=(const double& d);
+		C3Vec		operator/(const double& d);
+		void		operator/=(const double& d);
 
 		friend std::ostream& operator<<(std::ostream& os, const C3Vec& v);
+		friend C3Mat operator*(const C3Vec& v);
 
 
 

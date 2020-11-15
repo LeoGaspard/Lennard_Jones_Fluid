@@ -66,8 +66,9 @@ void CApplication::ParseCommandLineOptions(int argc,const char * argv[])
 			}
 			catch(...)
 			{
-				std::cerr << "Fatal Error : Invalid number of threads  \"" <<  argv[i+1] << "\". The program will stop." << std::endl;
-				exit(1);
+				std::stringstream errMsg;
+				errMsg << "Invalid number of threads  \"" <<  argv[i+1] << "\"";
+				throw std::runtime_error(errMsg.str());
 			}
 		}
 	}
