@@ -35,10 +35,12 @@ class CBox
 {
 	private:
 		double 					m_dA, m_dB, m_dC, m_dAlpha, m_dBeta, m_dGamma, m_dVolume;
+		double					m_dPotEnergy,m_dKinEnergy,m_dDensity;
 		std::vector<CAtom>			m_vAtomList;
 		C3Mat					m_H;
 		std::vector<std::vector<unsigned int>>	m_vNeighborList;
 		std::vector<CPos>			m_vPosList;
+		std::vector<double>			m_vRadialDistributionFunction;
 
 	public:
 		// Constructors & destructor
@@ -52,13 +54,20 @@ class CBox
 		void			InitPosFromRandomDistribution(double inDMin);
 		void			InitSpeedRandom(double inTemperature);
 		double			ComputeTemperature();
-		void			ComputeForces();
+		double			ComputeForces();
 		void			NeighborList(double cutoff, double neighbor);
 		bool			CheckNeighborList(double neighbor);
+		void			UpdatePositions(double deltaT);
+		double			UpdateSpeeds(double deltaT);
+		void			ComputeRadialDistributionFunction(double inStep, double inDMax,int inSteps);
 
 		// Getters
 		CAtom&			GetAtom(unsigned int n);
 		double			GetTemperature(){return this->ComputeTemperature();};
+		double			GetPotEnergy(){return m_dPotEnergy;};
+		double			GetKinEnergy(){return m_dKinEnergy;};
+		double			GetVolume(){return m_dVolume;};
+		double			GetDensity(){return m_vAtomList.size()/m_dVolume;};
 		unsigned int		GetNAtom(){return m_vAtomList.size();};
 
 		// Setters
@@ -74,6 +83,7 @@ class CBox
 		void			OutAtomPos(std::ofstream& f);
 		void			OutAtomSpeed(std::ofstream& f);
 		void			OutAtomForces(std::ofstream& f);
+		void			OutRadialDistributionFunction(double inStep, std::ofstream& f);
 };
 
 #endif // CBOX_H_INCLUDED

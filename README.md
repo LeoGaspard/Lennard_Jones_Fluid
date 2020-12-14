@@ -13,7 +13,7 @@ The aim is to implement a simulation of a Lennard-Jones fluid of atoms that runs
 THIS IS NOT FIXED YET
 | Variable | Length   | Time |  Mass | Energy | Pressure |Temperature | Angle
 |--|--|--|--|--|--|--|--|
-| **Unit** | bohr  | picosecond | Dalton | Joule | Pascal | Kelvin | °
+| **Unit** | bohr  | femtosecond | Dalton | Joule | Pascal | Kelvin | °
 
 ## Building the input file
 
@@ -82,6 +82,10 @@ There are different parameters that can be set within this section
  - **Temperature** : requires a temperature in Kelvin
  - **Neighbor** : requires a distance (with an optional unit specification) corresponding to the Verlet skin depth for the neighbor list
  - **Cutoff** : the general cutoff radius used when computing the potential
+ - **Print** : will print the properties, trajectories and compute radial distribution function every *n* steps
+ - **Thermostat** : the value of the characteristic timescale *tau* for the Berendsen thermostat
+ - **Equilibration** : the number of equilibration steps and the number of steps between each thermostat utilisaiton
+ - **Radial** : the maximum distance at which the radial distribution function will be computed (should not be greater than a/2 in the case of a cubic box) and the step used for the computation.
 
 *Example*
 
@@ -91,18 +95,8 @@ There are different parameters that can be set within this section
 		Temperature	375
 		Neighbor	0.05 A
 		Cutoff		3
+		Print		20
+		Thermostat	150
+		Equilibration	1500	5
+		Radial		30	0.1
 	End
-
-## Theoretical background
-
-### Velocity verlet
-$$
-\vec{r}(t + \delta t) = \vec{r} (t) + \delta t \vec{v}(t) + \frac{1}{2} \delta t^2 \vec{a}(t) \\
-\vec{v}(t + \delta t ) = \vec{v}(t) + \frac{1}{2} \delta t \left[ \vec{a}(t) + \vec{a}(t + \delta t)  \right]
-$$
-
-### Radial distribution function
-
-$$
-g(r) = \frac{\text d n_r}{4 \pi r^2 \text d r  \rho(r)}
-$$

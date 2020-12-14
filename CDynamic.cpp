@@ -48,7 +48,7 @@ void CDynamic::ParseInputFile()
 	bool					bBox(false),bAtoms(false);
 	bool					bRandom(false); // Check if the positions have to be randomly set
 	// These are the possible input variables
-	double 					dA(0.0), dB(0.0), dC(0.0), dAlpha(90.0), dBeta(90.0), dGamma(90.0),dDist(0.0);
+	double 					dA(0.0), dB(0.0), dC(0.0), dAlpha(90.0), dBeta(90.0), dGamma(90.0),dDist(0.0), dVolume(0.0);
 	
 	std::ifstream input(m_strInputFile);
 	if(input.is_open())
@@ -225,21 +225,23 @@ void CDynamic::ParseInputFile()
 							if(strcmp(strParam.data(),"K")==0)
 							{
 								// We convert from Kelvin to eV
-								dEpsilon *= K_TO_EV;
-								streamAtomParam >> dSigma >> strParam;
-							}
-							else if(strcmp(strParam.data(),"H")==0)
-							{
-								// We convert from Hartree to eV
-								dEpsilon *= HARTREE_TO_EV;
+								dEpsilon *= K_TO_J;
 								streamAtomParam >> dSigma;
 							        pos = streamAtomParam.tellg();
 								streamAtomParam	>> strParam;
 							}
-							else if(strcmp(strParam.data(),"J")==0)
+							else if(strcmp(strParam.data(),"H")==0)
+							{
+								// We convert from Hartree to eV
+								dEpsilon *= HARTREE_TO_J;
+								streamAtomParam >> dSigma;
+							        pos = streamAtomParam.tellg();
+								streamAtomParam	>> strParam;
+							}
+							else if(strcmp(strParam.data(),"ev")==0)
 							{
 								// We convert from Joules to eV
-								dEpsilon *= J_TO_EV;
+								dEpsilon *= EV_TO_J;
 								streamAtomParam >> dSigma;
 							        pos = streamAtomParam.tellg();
 								streamAtomParam	>> strParam;
@@ -247,7 +249,7 @@ void CDynamic::ParseInputFile()
 							else if(strcmp(strParam.data(),"cm")==0)
 							{
 								// We convert from cm-1 to eV
-								dEpsilon *= CM_TO_EV;
+								dEpsilon *= CM_TO_J;
 								streamAtomParam >> dSigma;
 							        pos = streamAtomParam.tellg();
 								streamAtomParam	>> strParam;
@@ -255,7 +257,7 @@ void CDynamic::ParseInputFile()
 							else if(strcmp(strParam.data(),"kcalmol")==0)
 							{
 								// We convert from kcal/mol to eV
-								dEpsilon *= KCALMOL_TO_EV;
+								dEpsilon *= KCALMOL_TO_J;
 								streamAtomParam >> dSigma;
 							        pos = streamAtomParam.tellg();
 								streamAtomParam	>> strParam;
@@ -263,7 +265,7 @@ void CDynamic::ParseInputFile()
 							else if(strcmp(strParam.data(),"kjmol")==0)
 							{
 								// We convert from kJ/mol to eV
-								dEpsilon *= KJMOL_TO_EV;
+								dEpsilon *= KJMOL_TO_J;
 								streamAtomParam >> dSigma;
 							        pos = streamAtomParam.tellg();
 								streamAtomParam	>> strParam;
@@ -297,6 +299,7 @@ void CDynamic::ParseInputFile()
 								streamAtomParam >> dMass;
 							}
 							m_Box.AddAtoms(iN,dSigma,dEpsilon,dMass);
+							dVolume += iN*4*PI*dSigma*dSigma*dSigma/3;
 							bAtoms = true;
 						}
 					}
@@ -304,8 +307,8 @@ void CDynamic::ParseInputFile()
 			}
 			else if(strcmp(strFirstParam.data(),"MD")==0)
 			{
-				unsigned int	iSteps(0);
-				double		dTimeStep(0.0),dTemperature(0.0),dNeighbor(0.0),dCutoff(0.0);
+				unsigned int	iSteps(0),iPrintEvery(0),iEquilibration(0),iThermostat(0);
+				double		dTimeStep(0.0),dTemperature(0.0),dNeighbor(0.0),dCutoff(0.0),dTau(1.0), dRadialStep(1.),dRadialMax(1.);
 				for(std::string strMDParam; strcmp(strMDParam.data(),"End")!=0;getline(input,strMDParam),m_streamOutput<<strMDParam<<std::endl)
 				{
 					strMDParam = strMDParam.substr(0,strMDParam.find("!"));
@@ -375,7 +378,66 @@ void CDynamic::ParseInputFile()
 							dCutoff *= ANGSTROM_TO_BOHR;
 						}
 					}
-
+					else if(strcmp(strParam.data(),"Print")==0)
+					{
+						streamMDParam >> iPrintEvery;
+						if(streamMDParam.fail())
+						{
+							std::stringstream errMsg;
+							errMsg << "Bad input with line : " << strMDParam << std::endl;
+							throw std::runtime_error(errMsg.str());
+						}
+					}
+					else if(strcmp(strParam.data(),"Thermostat")==0)
+					{
+						streamMDParam >> dTau;
+						if(streamMDParam.fail())
+						{
+							std::stringstream errMsg;
+							errMsg << "Bad input with line : " << strMDParam << std::endl;
+							throw std::runtime_error(errMsg.str());
+						}
+					}	
+					else if(strcmp(strParam.data(),"Equilibration")==0)
+					{
+						streamMDParam >> iEquilibration >> iThermostat;
+						if(streamMDParam.fail())
+						{
+							std::stringstream errMsg;
+							errMsg << "Bad input with line : " << strMDParam << std::endl;
+							throw std::runtime_error(errMsg.str());
+						}
+					}
+					else if(strcmp(strParam.data(),"Radial")==0)
+					{
+						streamMDParam >> dRadialMax;
+						std::stringstream::pos_type pos = streamMDParam.tellg();
+						streamMDParam >> strParam;
+						if(strcmp(strParam.data(),"A")==0)
+						{
+							// Converting from A to bohr
+							dRadialMax *= ANGSTROM_TO_BOHR;
+							pos = streamMDParam.tellg();
+							streamMDParam >> dRadialStep;
+						}
+						else
+						{
+							streamMDParam.clear();
+							streamMDParam.seekg(pos,streamMDParam.beg);
+							streamMDParam >> dRadialStep;
+						}
+						if(streamMDParam.fail())
+						{
+							std::stringstream errMsg;
+							errMsg << "Bad input with line : " << strMDParam << std::endl;
+							throw std::runtime_error(errMsg.str());
+						}
+						streamMDParam >> strParam;
+						if(strcmp(strParam.data(),"A")==0)
+						{
+							dRadialStep *= ANGSTROM_TO_BOHR;
+						}
+					}
 				}
 
 				m_dTimeStep = dTimeStep;
@@ -383,7 +445,12 @@ void CDynamic::ParseInputFile()
 				m_dNeighbor = dNeighbor;
 				m_dCutoff = dCutoff;
 				m_iNStep = iSteps;
-
+				m_iPrintEvery = iPrintEvery;
+				m_iNEquilibrationStep = iEquilibration;
+				m_iThermostatStep = iThermostat;
+				m_dBerendsenTau = dTau;
+				m_dRadialStep = dRadialStep;
+			       	m_dRadialMax = dRadialMax;	
 			}
 			else if(strcmp(strFirstParam.data(),"")!=0)
 			{
@@ -407,7 +474,7 @@ void CDynamic::ParseInputFile()
 		{
 			m_Box.InitPosFromRandomDistribution(dDist);
 			m_Box.InitSpeedRandom(m_dInitTemperature);
-			std::ofstream	streamInitPos("Initial.pos");
+			std::ofstream	streamInitPos("initPos.xyz");
 			if(streamInitPos.is_open())
 			{
 				m_Box.OutAtomPos(streamInitPos);				
@@ -426,11 +493,11 @@ void CDynamic::ParseInputFile()
 		m_Box.OutBoxParam(m_streamOutput);
 		m_streamOutput << std::string(150,'-') << std::endl;
 		m_streamOutput << boost::format("%-25s %i")%"Number of threads"%m_iNumberThreads << std::endl;
+		m_streamOutput << boost::format("%-25s %i")%"Number of equilibration steps"%m_iNEquilibrationStep << std::endl;
 		m_streamOutput << boost::format("%-25s %i")%"Number of steps"%m_iNStep << std::endl;
 		m_streamOutput << boost::format("%-25s %d picoseconds")%"Timestep"%m_dTimeStep << std::endl;
 		m_streamOutput << boost::format("%-25s %d K")%"Temperature"%m_dInitTemperature << std::endl;
 		m_streamOutput << std::string(150,'=') << std::endl;
-		m_Box.ComputeForces();
 	}
 	else
 	{
@@ -440,21 +507,105 @@ void CDynamic::ParseInputFile()
 } //m_ParseInputFile
 
 // This applies the Berendsen thermostat to the system
-void	CDynamic::Berendsen()
+double	CDynamic::Berendsen()
 {
-	double dTargetT(0.0),dEffectiveT(m_Box.GetTemperature());
+	double dTargetT(0.0),dEffectiveT(m_Box.GetTemperature()), dMaxS(0.0);
 
-	dTargetT = dEffectiveT+(m_dInitTemperature-dEffectiveT)*m_dTimeStep/m_dBerendsenTau;
+	dTargetT = dEffectiveT+(m_dInitTemperature-dEffectiveT)*(m_iThermostatStep*m_dTimeStep)/m_dBerendsenTau;
+
 
 	for(unsigned int i=0;i<m_Box.GetNAtom();i++)
 	{
 		CAtom& a = m_Box.GetAtom(i);
 		CSpeed s = a.GetSpeed();
-		double dScaling = (s.Norm()*BOHR_TO_ANGSTROM*ANGSTROM_TO_M)/sqrt(3*KB*dTargetT/(a.GetMass()*DAL_TO_KG));
-		s /= dScaling;	   
+		double dScaling = (s.Norm())/sqrt(3*KB*dTargetT/(a.GetMass()*DAL_TO_KG));
+		s /= dScaling;	  
+		s *= M_TO_ANGSTROM*ANGSTROM_TO_BOHR/S_TO_FS;
+		dMaxS = s.Norm2() > dMaxS ? s.Norm2() : dMaxS;
 	    	a.SetSpeed(s);	
 	}
+	return dMaxS;
 }//Berendsen
+
+// This runs the dynamic
+void	CDynamic::Run()
+{
+	double		dT(0.0);
+
+	m_streamOutput << boost::format("%=150s")%"MD SIMULATION" << std::endl << std::string(150,'=') << std::endl;
+	m_streamOutput << boost::format("Printing every %2i steps")%m_iPrintEvery << std::endl;
+	m_streamOutput << std::string(150,'.') << std::endl;
+	m_streamOutput << "Step\t  t\t    Epot\t    Ekin\t    Etot       Temperature  Maximum force     Maximum speed" << std::endl;
+	m_streamOutput << "         fs   Dal.bohr^2.fs^-2 Dal.bohr^2.fs^-2 Dal.bohr^2.fs^-2    K" << std::endl;
+	m_streamOutput << std::string(150,'.') << std::endl;
+
+	std::ofstream	streamTraj("traj.xyz");
+	std::ofstream	streamSpeed("speed.xyz");
+	if(streamTraj.is_open())
+	{
+		m_Box.OutAtomPos(streamTraj);				
+		m_Box.ComputeForces();
+		m_Box.OutAtomSpeed(streamSpeed);
+//		m_Box.NeighborList(m_dCutoff,m_dNeighbor);
+		m_streamOutput << boost::format("%3i    %7.1f    % 8.4e    % 8.4e     % 8.4e      % 5.3f   \n")%0%dT%m_Box.GetPotEnergy()%m_Box.GetKinEnergy()%(m_Box.GetPotEnergy()+m_Box.GetKinEnergy())%m_Box.GetTemperature();
+
+		// Velocity verlet algorithm
+		// - Update positions with the speeds and forces
+		// - Wrap in the box
+		// - Update the speeds with the forces 
+		// - Compute the forces
+		// - Update the speeds with the forces
+		// - Apply a thermostat
+		for(unsigned int i=0; i<m_iNStep+m_iNEquilibrationStep; i++)
+		{
+			double dMaxF(0.0),dMaxS(0.0);
+			m_Box.UpdatePositions(m_dTimeStep);
+		//	if(!m_Box.CheckNeighborList(m_dNeighbor))
+		//	{
+		//		std::cout << "Step : " << i << " updating neighbor list" << std::endl; 
+		//		m_Box.NeighborList(m_dCutoff,m_dNeighbor);
+		//	}
+			m_Box.Wrap();
+			m_Box.UpdateSpeeds(m_dTimeStep);
+			dMaxF = m_Box.ComputeForces();
+			dMaxS = m_Box.UpdateSpeeds(m_dTimeStep);
+			if(i+1 < m_iNEquilibrationStep && (i+1)%m_iThermostatStep == 0)
+			{
+				dMaxS = Berendsen();
+			}
+			dT += m_dTimeStep;
+
+			if((i+1)%m_iPrintEvery==0)
+			{
+				m_streamOutput << boost::format("%3i    %7.1f    % 8.4e    % 8.4e     % 8.4e      % 5.3f      %5.e          %5.3e")%(i+1)%dT%m_Box.GetPotEnergy()%m_Box.GetKinEnergy()%(m_Box.GetPotEnergy()+m_Box.GetKinEnergy())%m_Box.GetTemperature()%dMaxF%dMaxS << std::endl;
+			}
+
+
+			if((i) > m_iNEquilibrationStep && (i+1)%m_iPrintEvery==0)
+			{
+				m_Box.ComputeRadialDistributionFunction(m_dRadialStep, m_dRadialMax, round(m_iNStep/m_iPrintEvery));
+				m_Box.OutAtomPos(streamTraj);				
+				m_Box.OutAtomSpeed(streamSpeed);
+			}
+			if((i)== m_iNEquilibrationStep)
+			{
+				m_streamOutput << "Equilibration done, thermostat turned off" << std::endl;
+			}
+		}
+		
+		std::ofstream	gr("radial_distribution");
+		if(gr.is_open())
+		{
+			m_Box.OutRadialDistributionFunction(m_dRadialStep,gr);
+		}
+	}
+	else
+	{
+		throw std::runtime_error("Can't open the file Initial.pos");
+	}
+	streamTraj.close();
+	streamSpeed.close();
+}
 
 
 // This writes the header (TCCM logo + code name) 

@@ -21,11 +21,12 @@ class CDynamic : public CApplication
 				CDynamic();
 				~CDynamic();
 		void		Setup(int, const char **);
+		void		Run();
 		
 
 
 			// Thermostats
-		void		Berendsen();
+		double		Berendsen();
 
 
 		// Output methods
@@ -38,8 +39,8 @@ class CDynamic : public CApplication
 		CBox		m_Box;
 
 		//MD attributes
-		double		m_dTimeStep, m_dInitTemperature, m_dNeighbor, m_dCutoff;
-		int		m_iNStep;
+		double		m_dTimeStep, m_dInitTemperature, m_dNeighbor, m_dCutoff, m_dRadialStep, m_dRadialMax;
+		unsigned int	m_iNStep, m_iNEquilibrationStep, m_iThermostatStep, m_iPrintEvery;
 
 		//Thermostats attributes
 		double		m_dBerendsenTau;

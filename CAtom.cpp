@@ -77,8 +77,6 @@ CAtom::~CAtom()
 //Computes the kinetic energy E = 1/2 mv^2
 void	CAtom::ComputeKineticEnergy()
 {
+	// Dal.bohr.fs^-2
 	m_dKineticEnergy = 0.5*m_dMass*m_Speed.Norm2();
-
-	// Converting the energy from dal.bohr^2.s^-2 to J
-	m_dKineticEnergy *= DAL_TO_KG*BOHR_TO_ANGSTROM*ANGSTROM_TO_M*BOHR_TO_ANGSTROM*ANGSTROM_TO_M;
 }//ComputeKineticEnergy

@@ -110,7 +110,7 @@ void	CBox::InitPosFromRandomDistribution(double inDMin)
 	
 	std::random_device			rd;
 	std::default_random_engine		eng(rd());
-	std::uniform_real_distribution<double>	seed(0,1);
+	std::uniform_real_distribution<double>	seed(0.05,0.95);
 	unsigned int				iNAccepted(0);
 	while(iNAccepted < iNPoints)
 	{
@@ -122,6 +122,48 @@ void	CBox::InitPosFromRandomDistribution(double inDMin)
 		// Express the trial coordinates in the cartesian basis
 		p1 = m_H*p1;
 
+		// Checking the distance to the box wall
+		// wall defined by the plane : ax + by + cz + d = 0, a normal vector n = (a,b,c) to the plane
+		// P=(x0,y0,z0) is a point of the plane, d = -ax0-by0-cz0
+		// dist^2 = (ax+by+cz+d)/(a^2+b^2+c^2)
+		// 3 planes contain (in the fractional basis) the point P(0,0,0), the 3 other contain P(1,1,1)
+		// The normal vectors to each plane are, in fractionnal basis 
+		// 0 0 1
+		// 0 1 0
+		// 1 0 0 with the first point and the second point
+
+		double	dSqDistToPlane(0.0); //Square of the distance to the plane
+		double	d(0.0); // d in the equation of the plane 
+		C3Vec n; // normal vector to the plane 
+
+		n = m_H*C3Vec(0,0,1); 	// First normal vector, in the cartesian basis 
+		d = 0.0;		// For the first 3 points d=0	
+		dSqDistToPlane = (n.Dot(p1)+d)*(n.Dot(p1)+d)/n.Norm2();
+		bAccepted = dSqDistToPlane > r2 ? true : false;
+		if(!bAccepted) continue;
+		d = -n.GetZ();
+		dSqDistToPlane = (n.Dot(p1)+d)*(n.Dot(p1)+d)/n.Norm2();
+		bAccepted = dSqDistToPlane > r2 ? true : false;
+		if(!bAccepted) continue;
+		n = m_H*C3Vec(0,1,0); 	// First normal vector, in the cartesian basis 
+		d = 0.0;		// For the first 3 points d=0	
+		dSqDistToPlane = (n.Dot(p1)+d)*(n.Dot(p1)+d)/n.Norm2();
+		bAccepted = dSqDistToPlane > r2 ? true : false;
+		if(!bAccepted) continue;
+		d = -n.GetY();
+		dSqDistToPlane = (n.Dot(p1)+d)*(n.Dot(p1)+d)/n.Norm2();
+		bAccepted = dSqDistToPlane > r2 ? true : false;
+		if(!bAccepted) continue;
+		n = m_H*C3Vec(1,0,0); 	// First normal vector, in the cartesian basis 
+		d = 0.0;		// For the first 3 points d=0	
+		dSqDistToPlane = (n.Dot(p1)+d)*(n.Dot(p1)+d)/n.Norm2();
+		bAccepted = dSqDistToPlane > r2 ? true : false;
+		if(!bAccepted) continue;
+		d = -n.GetX();
+		dSqDistToPlane = (n.Dot(p1)+d)*(n.Dot(p1)+d)/n.Norm2();
+		bAccepted = dSqDistToPlane > r2 ? true : false;
+		if(!bAccepted) continue;
+
 		// Find the grid position of this point
 		int iGridX = static_cast<int>(floor(p1.GetX()/dCellSize));
 		int iGridY = static_cast<int>(floor(p1.GetY()/dCellSize));
@@ -132,6 +174,7 @@ void	CBox::InitPosFromRandomDistribution(double inDMin)
 		iGridY = (iGridY < 0) ? iGridY+iNDivY : iGridY;
 		iGridZ = (iGridZ < 0) ? iGridZ+iNDivZ : iGridZ;
 
+
 		// Looping on the neighbouring cubes
 		for(int x = iGridX-2; x<=iGridX+2 && bAccepted; x++)
 		{
@@ -140,7 +183,7 @@ void	CBox::InitPosFromRandomDistribution(double inDMin)
 				for(int z = iGridZ-2; z <=iGridZ+2 && bAccepted; z++)
 				{
 					// Applying PBC to x y and z
-					unsigned int iGx = (x < 0) ? x+iNDivX : x;
+					unsigned int iGx = (x < 0) ? x+(iNDivX) : x;
 					iGx = (iGx >= iNDivX) ? iGx-iNDivX : iGx; 
 					unsigned int iGy = (y < 0) ? y+iNDivY : y;
 					iGy = (iGy >= iNDivY) ? iGy-iNDivY : iGy; 
@@ -199,8 +242,6 @@ void	CBox::Wrap()
 		double v = p.GetY();
 		double w = p.GetZ();
 
-		p = m_H.Inverse()*p;
-
 		// Apply PBC
 
 		u = (u<0 || u>1) ? u-floor(u) : u;
@@ -231,7 +272,7 @@ void	CBox::InitSpeedRandom(double inTemperature)
 {
 	std::random_device			rd;
 	std::default_random_engine		eng(rd());
-	std::uniform_real_distribution<double>	seed(0,1);
+	std::uniform_real_distribution<double>	seed(-1,1);
 
 	for(unsigned int i=0; i<m_vAtomList.size(); i++)
 	{
@@ -242,8 +283,9 @@ void	CBox::InitSpeedRandom(double inTemperature)
 		CSpeed s(dX,dY,dZ);
 
 		// scaling the speed using <V>²=3Kb<T>/m
-		double dScaling = (s.Norm()*BOHR_TO_ANGSTROM*ANGSTROM_TO_M)/sqrt(3*KB*inTemperature/(m_vAtomList[i].GetMass()*DAL_TO_KG));
+		double dScaling = (s.Norm())/sqrt(3*KB*inTemperature/(m_vAtomList[i].GetMass()*DAL_TO_KG));
 		s /= dScaling;
+		s *= M_TO_ANGSTROM*ANGSTROM_TO_BOHR/S_TO_FS;
 		m_vAtomList[i].SetSpeed(s);
 	}
 }//InitSpeedRandom
@@ -251,29 +293,37 @@ void	CBox::InitSpeedRandom(double inTemperature)
 double	CBox::ComputeTemperature()
 {
 	double dT(0.0);
+	m_dKinEnergy = 0.0;
 
 	for(unsigned int i=0; i<m_vAtomList.size();i++)
 	{
 		m_vAtomList[i].ComputeKineticEnergy();
+		m_dKinEnergy += m_vAtomList[i].GetKineticEnergy();
 		
-		dT += 2*m_vAtomList[i].GetKineticEnergy()/(3*KB);
+		// K
+		dT += 2*(m_vAtomList[i].GetKineticEnergy()*DAL_TO_KG*(BOHR_TO_ANGSTROM*ANGSTROM_TO_M*BOHR_TO_ANGSTROM*ANGSTROM_TO_M/(FS_TO_S*FS_TO_S)))/(3*KB);
 	}
 
 	dT /= m_vAtomList.size();
-
 	return dT;
 }//ComputeTemperature
 
-void	CBox::ComputeForces()
+double	CBox::ComputeForces()
 {
-	double dPotential(0.0);
 
-	#pragma omp parallel for reduction(+:dPotential)
+	double dMaxF = 0.0;
+
+	for(unsigned int i=0;i<m_vAtomList.size();i++)
+	{
+		m_vAtomList[i].SetForces(CForce());
+	}
+
 	for(unsigned int i=0;i<(m_vAtomList.size()-1);i++)
 	{
-		for(unsigned int k=0;k<m_vNeighborList[i].size();k++)
+	//	for(unsigned int k=0;k<m_vNeighborList[i].size();k++)
+		for(unsigned int j=i+1;j<m_vAtomList.size();j++)
 		{
-			unsigned int j = m_vNeighborList[i][k];
+//			unsigned int j = m_vNeighborList[i][k];
 			C3Vec ri = m_vAtomList[i].GetPos();
 			C3Vec rj = m_vAtomList[j].GetPos();
 
@@ -287,12 +337,13 @@ void	CBox::ComputeForces()
 			C3Vec rij = ri-rj;
 
 			rij.SetX(rij.GetX()-round(rij.GetX()));
-			rij.SetX(rij.GetY()-round(rij.GetY()));
-			rij.SetX(rij.GetZ()-round(rij.GetZ()));
+			rij.SetY(rij.GetY()-round(rij.GetY()));
+			rij.SetZ(rij.GetZ()-round(rij.GetZ()));
 
 			rij = m_H*rij;
 
 			// End of the algorithm
+			rij *= BOHR_TO_ANGSTROM*ANGSTROM_TO_M;
 
 			double r2 = rij.Norm2();
 			double sigma(0.0), epsilon(0.0);
@@ -314,28 +365,33 @@ void	CBox::ComputeForces()
 				epsilon = sqrt(m_vAtomList[i].GetEpsilon()*m_vAtomList[j].GetEpsilon());
 			}
 
+			sigma *= BOHR_TO_ANGSTROM*ANGSTROM_TO_M;
 			double r6 = r2*r2*r2;
 			double s6 = sigma*sigma*sigma*sigma*sigma*sigma;
 
 			// V = 4E[s^12/r^12-s^6/r^6]
-			dPotential += 4*epsilon*((s6*s6)/(r6*r6)-s6/r6);
+			m_dPotEnergy += 4*epsilon*((s6*s6)/(r6*r6)-s6/r6);
 
 			CForce f;
 
 			// dV/dx1 = (x1-x2)*E*[24*s^6/r^8-48*s^12/r^14]
-			f.SetX((ri.GetX()-rj.GetX())*epsilon*(24*s6/(r6*r2)-46*s6*s6/(r6*r6*r2)));
-			f.SetY((ri.GetY()-rj.GetY())*epsilon*(24*s6/(r6*r2)-46*s6*s6/(r6*r6*r2)));
-			f.SetZ((ri.GetZ()-rj.GetZ())*epsilon*(24*s6/(r6*r2)-46*s6*s6/(r6*r6*r2)));
+			f.SetX((rij.GetX())*epsilon*(24*s6/(r6*r2)-48*s6*s6/(r6*r6*r2)));
+			f.SetY((rij.GetY())*epsilon*(24*s6/(r6*r2)-48*s6*s6/(r6*r6*r2)));
+			f.SetZ((rij.GetZ())*epsilon*(24*s6/(r6*r2)-48*s6*s6/(r6*r6*r2)));
 
-			#pragma omp critical
+			// Dal.bohr.fs^-2
+			f *= KG_TO_DAL*M_TO_ANGSTROM*ANGSTROM_TO_BOHR/(S_TO_FS*S_TO_FS);
+
+			m_vAtomList[j].AddForce(f);
+
+			f *= -1;
+
 			m_vAtomList[i].AddForce(f);
 
-			f = CForce() - f;
-
-			#pragma omp critical
-			m_vAtomList[j].AddForce(f);
+			dMaxF = f.Norm2() > dMaxF ? f.Norm2() : dMaxF;
 		}
 	}
+	return sqrt(dMaxF);
 }
 
 // Builds the neighbor list in the box
@@ -347,7 +403,6 @@ void	CBox::NeighborList(double cutoff, double neighbor)
 	m_vNeighborList.resize(m_vAtomList.size());
 
 	double 	r2 = (cutoff+neighbor)*(cutoff+neighbor);
-	#pragma omp parallel for schedule(guided)
 	for(unsigned int i=0; i<m_vAtomList.size()-1; i++)
 	{
 		for(unsigned int j=i+1; j<m_vAtomList.size();j++)
@@ -377,7 +432,6 @@ void	CBox::NeighborList(double cutoff, double neighbor)
 
 			if(d2<r2)
 			{
-				#pragma omp critical
 				{
 					m_vNeighborList[i].push_back(j);
 				}
@@ -395,7 +449,6 @@ void	CBox::NeighborList(double cutoff, double neighbor)
 bool	CBox::CheckNeighborList(double neighbor)
 {
 	bool check = true;
-	#pragma omp parallel for
 	for(unsigned int i=0;i<m_vAtomList.size();i++)
 	{
 		CPos ri = m_vAtomList[i].GetPos();
@@ -405,12 +458,87 @@ bool	CBox::CheckNeighborList(double neighbor)
 
 		if(rij.Norm2() > neighbor/2)
 		{
-			std::cout << rij.Norm2() << std::endl;
 			check = false;
 		}
 	}
 	return check;
 }
+
+// Update the positions within the box
+void	CBox::UpdatePositions(double inTimeStep)
+{
+	for(unsigned int i=0; i<m_vAtomList.size(); i++)
+	{
+		CPos r;
+		r = m_vAtomList[i].GetPos() + m_vAtomList[i].GetSpeed() * inTimeStep + m_vAtomList[i].GetForces() * (inTimeStep*inTimeStep/(2*m_vAtomList[i].GetMass()));
+		m_vAtomList[i].SetPos(r);
+	}
+}//UpdatePOsitions
+
+// Update the speeds of the particles at a half step
+double	CBox::UpdateSpeeds(double inTimeStep)
+{
+	double dMaxS = 0.0;
+	for(unsigned int i=0; i<m_vAtomList.size(); i++)
+	{
+		CSpeed s;
+		s = m_vAtomList[i].GetForces()/(m_vAtomList[i].GetMass()*2)*inTimeStep;
+		m_vAtomList[i].ChangeSpeed(s);
+		dMaxS = s.Norm2() > dMaxS ? s.Norm2() : dMaxS;
+	}
+
+	return sqrt(dMaxS);
+}//UpdateSpeeds
+
+// Update the radial distribution funciton
+void	CBox::ComputeRadialDistributionFunction(double inStep, double inDMax, int inSteps)
+{
+	std::vector<int>	vHistogram;
+	vHistogram.resize(round(inDMax/inStep));
+	m_dDensity = this->GetDensity();
+	if(m_vRadialDistributionFunction.size()==0)
+	{
+		m_vRadialDistributionFunction.resize(round(inDMax/inStep));
+	}
+
+	for(unsigned int i=0; i<m_vAtomList.size()-1;i++)
+	{
+		for(unsigned int j=i+1; j<m_vAtomList.size();j++)
+		{
+			C3Vec ri = m_vAtomList[i].GetPos();
+			C3Vec rj = m_vAtomList[j].GetPos();
+			// Algorithm for the minimum image convention in
+			// Appendix B, Eq. B.9. 
+			// M. E. Tuckerman. Statistical Mechanics : Theory and Molecular Simulation
+			// Oxford University Press, Oxford, UK, 2010
+			ri = m_H.Inverse()*ri;
+			rj = m_H.Inverse()*rj;
+
+			C3Vec rij = ri-rj;
+
+			rij.SetX(rij.GetX()-round(rij.GetX()));
+			rij.SetY(rij.GetY()-round(rij.GetY()));
+			rij.SetZ(rij.GetZ()-round(rij.GetZ()));
+
+			rij = m_H*rij;
+			// End of the algorithm
+			
+			double d = rij.Norm();
+			if(d <= inDMax)
+			{
+				unsigned int index = round(d/inStep);
+				vHistogram[index]+=1;
+			}
+		}
+	}
+
+	for(unsigned int i=0; i<vHistogram.size(); i++)
+	{
+		double	dVol = 4*PI/3 * (std::pow((i+1)*inStep,3)-std::pow(i*inStep,3));
+		m_vRadialDistributionFunction[i] += vHistogram[i]/(m_vAtomList.size() * m_dDensity * dVol * inSteps);
+	}
+} // ComputeRadialDistributionFunction
+
 
 
 // Write the box parameters in the stream f
@@ -436,9 +564,10 @@ void	CBox::OutBoxParam(std::ofstream& f)
 // Write the atomic coordinates in the stream f
 void	CBox::OutAtomPos(std::ofstream& f)
 {
+	f << m_vAtomList.size() << std::endl << std::endl;
 	for(unsigned int i = 0; i<m_vAtomList.size();i++)
 	{
-		f << m_vAtomList[i].GetPos() << std::endl;
+		f << "C   " << m_vAtomList[i].GetPos() << std::endl;
 	}
 }//OutAtomPos
 
@@ -449,6 +578,7 @@ void	CBox::OutAtomSpeed(std::ofstream& f)
 	{
 		f << m_vAtomList[i].GetSpeed() << std::endl;
 	}
+	f << std::endl;
 }//OutAtomSpeed
 
 // Write the forces vectors in the stream f
@@ -458,6 +588,13 @@ void	CBox::OutAtomForces(std::ofstream& f)
 	{
 		f << m_vAtomList[i].GetForces() << std::endl;
 	}
+	f << std::endl;
 }//OutAtomForces
 
-
+void	CBox::OutRadialDistributionFunction(double inStep,std::ofstream& f)
+{
+	for(unsigned int i=0; i<m_vRadialDistributionFunction.size(); i++)
+	{
+		f << boost::format("%6.3f    %8.4f")%(i*inStep)%m_vRadialDistributionFunction[i] << std::endl;
+	}
+}

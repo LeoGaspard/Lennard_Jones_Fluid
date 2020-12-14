@@ -41,8 +41,8 @@ class C3Vec
 
 				// Setters
 		void		SetX(double inX){m_dX = inX;};
-		void		SetY(double inY){m_dX = inY;};
-		void		SetZ(double inZ){m_dX = inZ;};
+		void		SetY(double inY){m_dY = inY;};
+		void		SetZ(double inZ){m_dZ = inZ;};
 		
 				// Operators
 		C3Vec		operator+(const C3Vec& v);

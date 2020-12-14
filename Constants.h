@@ -28,8 +28,12 @@
 
 #define BOHR_TO_ANGSTROM	0.529177
 #define ANGSTROM_TO_BOHR	1.889727
-#define ANGSTROM_TO_M		10E-10
-#define M_TO_ANGSTROM		10E+10
+#define ANGSTROM_TO_M		1E-10
+#define M_TO_ANGSTROM		1E+10
+
+// Time conversion
+#define	FS_TO_S			1E-15
+#define S_TO_FS			1E+15
 
 // Angle conversion
 #define RADIAN_TO_DEGREE	57.295779513

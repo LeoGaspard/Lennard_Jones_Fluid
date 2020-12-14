@@ -64,7 +64,7 @@ C3Vec	C3Vec::Cross(C3Vec v)
 
 std::ostream&	C3Vec::Print(std::ostream& out) const
 {
-	out << boost::format("% 8.6f     % 8.6f     % 8.6f")%m_dX%m_dY%m_dZ;
+	out << boost::format("% 8.6e     % 8.6e     % 8.6e")%m_dX%m_dY%m_dZ;
 	return out;
 }
 

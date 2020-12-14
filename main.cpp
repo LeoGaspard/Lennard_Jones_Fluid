@@ -11,6 +11,7 @@ int main(int argc, const char * argv[])
 	{
 		CDynamic *dyn = new CDynamic();
 		dyn->Setup(argc, argv);
+		dyn->Run();
 	}
 	catch(std::exception const& e)
 	{

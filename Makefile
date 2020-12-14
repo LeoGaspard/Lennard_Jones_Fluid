@@ -1,7 +1,7 @@
 CC = g++
 EXEC = Project
 LIBS = 
-FLAGS = -fopenmp -Wall -std=c++2a
+FLAGS = -fopenmp -Wall -std=c++2a  -O3
 
 all: main.o
 	$(CC) *.o -o $(EXEC) $(LIBS) $(FLAGS)
