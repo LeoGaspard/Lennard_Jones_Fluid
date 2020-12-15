@@ -67,11 +67,8 @@ Then the user must specify on different lines,the number of atoms, the value of 
 	
 	Atoms random 0.5
 		400 5.465 K 2.628 A 4
-		250 0.0100656 6.42696 40
 	End
-*This input will lead to the creation of 650 atoms, 400 with the parameters $\sigma = 4.9662$ (bohr) , $\varepsilon = 4.70922\times 10^{-4}$ (eV) and a mass of 4 Dal nand 250 with the parameters $\sigma = 6.42696$ (bohr), $\varepsilon = 1.00656 \times 10^{-2}$ (eV) and a mass of 40 Dal. Each atom will be at least 0.5 bohr away from every other atom*
-
-**Reading from file**
+*This input will lead to the creation of 400 atoms with the parameters $\sigma = 4.9662$ (bohr) , $\varepsilon = 4.70922\times 10^{-4}$ (eV) and a mass of 4 Dal . Each atom will be at least 0.5 bohr away from every other atom*
 
 ### MD Parameters
 The keyword for specifying the molecular dynamic parameters is **MD**
