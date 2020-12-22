@@ -110,7 +110,7 @@ void	CBox::InitPosFromRandomDistribution(double inDMin)
 	
 	std::random_device			rd;
 	std::default_random_engine		eng(rd());
-	std::uniform_real_distribution<double>	seed(0.05,0.95);
+	std::uniform_real_distribution<double>	seed(0.0,1.0);
 	unsigned int				iNAccepted(0);
 	while(iNAccepted < iNPoints)
 	{
