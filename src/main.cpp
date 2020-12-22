@@ -1,7 +1,6 @@
 #include <iostream>
 #include <exception>
 
-#include "CError.h"
 #include "CDynamic.h"
 #include "Constants.h"
 

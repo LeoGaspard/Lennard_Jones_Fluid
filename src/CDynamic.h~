@@ -9,9 +9,6 @@
 //AUTHOR:		Léo Gaspard
 ///////////////////////////////////////////////////////
 
-#ifndef CDYNAMIC_H_INCLUDED
-#define CDYNAMIC_H_INCLUDED
-
 #include <boost/format.hpp>
 
 #include "CApplication.h"
@@ -48,5 +45,3 @@ class CDynamic : public CApplication
 		//Thermostats attributes
 		double		m_dBerendsenTau;
 };
-
-#endif // CDYNAMIC_H_INCLUDED
